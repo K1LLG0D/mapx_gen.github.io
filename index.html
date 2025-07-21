@@ -75,12 +75,15 @@
       const pl = `pl=c:3C3C3CFF,w:5,${plCoords}`;
       const pt = `pt=${ptStart[0].toFixed(4)},${ptStart[1].toFixed(4)},comma_solid_red~${ptEnd[0].toFixed(4)},${ptEnd[1].toFixed(4)},comma_solid_blue`;
 
-      const lons = coords.map(c => c[0]);
-      const lats = coords.map(c => c[1]);
-      const minLon = Math.min(...lons).toFixed(4);
-      const maxLon = Math.max(...lons).toFixed(4);
-      const minLat = Math.min(...lats).toFixed(4);
-      const maxLat = Math.max(...lats).toFixed(4);
+      const allCoords = [...coords, ptStart, ptEnd];
+      const lons = allCoords.map(c => c[0]);
+      const lats = allCoords.map(c => c[1]);
+      const padding = 0.0030; // ~20 píxeles de margen
+
+      const minLon = Math.min(...lons).toFixed(5);
+      const maxLon = Math.max(...lons).toFixed(5);
+      const minLat = (Math.min(...lats) - padding).toFixed(6);
+      const maxLat = (Math.max(...lats) + padding).toFixed(6);
       const bbox = `bbox=${minLon},${minLat}~${maxLon},${maxLat}`;
 
       return `https://tc.mobile.yandex.net/get-map/1.x/?l=map&cr=0&lg=0&scale=1&lang=es&${pt}&${pl}&${bbox}&size=500,256`;
@@ -100,12 +103,16 @@
         })
         .on('routesfound', function(e) {
           const latlngs = e.routes[0].coordinates;
-          const coords = latlngs.map(ll => [ll.lng, ll.lat]);
-          const ptStart = coords[0];
-          const ptEnd = coords[coords.length - 1];
-          const yandexURL = buildYandexURL(coords, ptStart, ptEnd);
+          const bounds = L.latLngBounds(latlngs).pad(0.1);
+          map.fitBounds(bounds);
 
-          map.fitBounds(L.latLngBounds(latlngs));
+          const simplifyCoords = (points, step = 5) =>
+            points.filter((_, index) => index % step === 0 || index === points.length - 1)
+                  .map(ll => [ll.lng, ll.lat]);
+
+          const coords = simplifyCoords(latlngs, 5);
+          const yandexURL = buildYandexURL(coords, coords[0], coords[coords.length - 1]);
+
           document.getElementById("url").innerHTML = `<a href="${yandexURL}" target="_blank">${yandexURL}</a>`;
         })
         .addTo(map);
@@ -130,10 +137,16 @@
       ).openPopup();
 
       waypoints.push(marker.getLatLng());
+
+      if (waypoints.length > 0) {
+        const bounds = L.latLngBounds(waypoints);
+        map.fitBounds(bounds.pad(0.2));
+      }
+
       updateRoute();
     });
 
-    // Buscador con Photon (solo Lima, Perú)
+    // Buscador con Photon
     const searchInput = document.getElementById('search-input');
     const suggestionsDiv = document.getElementById('suggestions');
 
@@ -151,7 +164,7 @@
           data.features.forEach(place => {
             const suggestion = document.createElement("div");
             suggestion.className = "suggestion";
-            suggestion.textContent = place.properties.name + ", " + (place.properties.city || "") + ", " + (place.properties.country || "");
+            suggestion.textContent = `${place.properties.name}, ${place.properties.city || ""}, ${place.properties.country || ""}`;
             suggestion.addEventListener("click", () => {
               const coords = place.geometry.coordinates;
               const latlng = L.latLng(coords[1], coords[0]);

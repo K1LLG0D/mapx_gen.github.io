@@ -78,12 +78,12 @@
       const allCoords = [...coords, ptStart, ptEnd];
       const lons = allCoords.map(c => c[0]);
       const lats = allCoords.map(c => c[1]);
-      const padding = 0.0030; // ~20 píxeles de margen
+      const padding = 0.008; // ~20 píxeles de margen
 
-      const minLon = Math.min(...lons).toFixed(5);
+      const minLon = (Math.min(...lons) + padding).toFixed(5);
       const maxLon = Math.max(...lons).toFixed(5);
-      const minLat = (Math.min(...lats) - padding).toFixed(6);
-      const maxLat = (Math.max(...lats) + padding).toFixed(6);
+      const minLat = (Math.min(...lats) + padding).toFixed(5);
+      const maxLat = Math.max(...lats).toFixed(5);
       const bbox = `bbox=${minLon},${minLat}~${maxLon},${maxLat}`;
 
       return `https://tc.mobile.yandex.net/get-map/1.x/?l=map&cr=0&lg=0&scale=1&lang=es&${pt}&${pl}&${bbox}&size=500,256`;

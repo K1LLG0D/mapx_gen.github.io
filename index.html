@@ -97,7 +97,7 @@ function buildYandexURL(coords, ptStart, ptEnd) {
     padding = 0.0003;
     minLon = (rawMinLon ).toFixed(5);
     maxLon = (rawMaxLon ).toFixed(5);
-    minLat = (rawMinLat - padding/2).toFixed(6);
+    minLat = (rawMinLat - 6*padding).toFixed(6);
     maxLat = (rawMaxLat + 2*padding).toFixed(6);
    
   } else {

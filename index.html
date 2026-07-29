@@ -1,213 +1,480 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <title>Mapa interactivo con rutas (Yandex URL)</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INFORME TÉCNICO - NCR del Perú S.A.C.</title>
   <style>
-    #map { height: 100vh; width: 100%; }
-    #url {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: white;
-      padding: 10px;
-      z-index: 1000;
-      max-width: 90%;
-      font-size: 12px;
+    * {
+      box-sizing: border-box;
+      font-family: Arial, Helvetica, sans-serif;
     }
-    #search-container {
-      position: absolute;
-      bottom: 10px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 1000;
-      background: white;
-      padding: 8px;
-      width: 300px;
-      border-radius: 6px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    body {
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 20px;
+      color: #000;
     }
-    #search-input {
-      width: 100%;
-      padding: 5px;
-      font-size: 14px;
+    .toolbar {
+      max-width: 820px;
+      margin: 0 auto 15px auto;
+      display: flex;
+      justify-content: flex-end;
     }
-    #suggestions {
-      background: white;
-      border-top: 1px solid #ccc;
-      max-height: 150px;
-      overflow-y: auto;
-      font-size: 14px;
-    }
-    .suggestion {
-      padding: 6px;
+    .btn-print {
+      background-color: #111;
+      color: #fff;
+      border: none;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: bold;
+      border-radius: 4px;
       cursor: pointer;
     }
-    .suggestion:hover {
-      background: #f0f0f0;
+    .btn-print:hover {
+      background-color: #333;
+    }
+    /* Hoja principal estilo documento real */
+    .paper {
+      background: #fff;
+      width: 820px;
+      margin: 0 auto;
+      padding: 30px 40px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    /* ENCABEZADO */
+    .header-table {
+      width: 100%;
+      margin-bottom: 5px;
+    }
+    .logo-img {
+      max-width: 210px;
+      height: auto;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .company-title {
+      font-weight: bold;
+      font-size: 13px;
+      margin-top: 4px;
+    }
+    .doc-title {
+      text-align: center;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 18px;
+      font-weight: bold;
+      line-height: 1.2;
+    }
+    .ppto-container {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+    }
+    .label-text {
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+    /* Anchos fijos para alinear columnas */
+    .label-col-1 {
+      width: 65px;
+      display: inline-block;
+    }
+    .label-col-2 {
+      width: 90px;
+      display: inline-block;
+    }
+    .label-col-3 {
+      width: 90px;
+      display: inline-block;
+    }
+    /* CASILLEROS INDIVIDUALES */
+    .boxes-group {
+      display: inline-flex;
+    }
+    .box-input {
+      width: 19px;
+      height: 21px;
+      border: 1px solid #000;
+      margin-right: -1px; /* Comparte bordes */
+      text-align: center;
+      font-size: 11px;
+      font-weight: bold;
+      text-transform: uppercase;
+      outline: none;
+      background: transparent;
+      padding: 0;
+    }
+    .box-input:focus {
+      background-color: #e8f0fe;
+    }
+    /* SEPARADORES HORIZONTALES */
+    .divider {
+      border-bottom: 1.5px solid #000;
+      margin: 6px 0 10px 0;
+    }
+    /* FILAS DE CAMPOS */
+    .field-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+    .field-inline {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .full-width-input {
+      width: 100%;
+      border: none;
+      outline: none;
+      font-size: 12px;
+      padding: 2px 0;
+      background: transparent;
+    }
+    /* SECCIÓN TRABAJOS EFECTUADOS */
+    .works-section {
+      margin-top: 10px;
+    }
+    .line-input {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #000;
+      outline: none;
+      font-size: 12px;
+      padding: 3px 0;
+      margin-bottom: 2px;
+      background: transparent;
+    }
+    /* PIE DE PÁGINA Y FIRMAS */
+    .footer-section {
+      margin-top: 50px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+    }
+    .sig-block {
+      width: 300px;
+      text-align: center;
+    }
+    .sig-line {
+      border-top: 1px solid #000;
+      padding-top: 4px;
+      font-size: 10px;
+      font-weight: bold;
+    }
+    /* CONFIGURACIÓN PARA IMPRESIÓN / PDF */
+    @media print {
+      body {
+        background: none;
+        padding: 0;
+      }
+      .toolbar {
+        display: none;
+      }
+      .paper {
+        border: none;
+        box-shadow: none;
+        width: 100%;
+        padding: 0;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="map"></div>
-  <div id="url">Haz clic en dos puntos para generar la ruta...</div>
-  <div id="search-container">
-    <input type="text" id="search-input" placeholder="Buscar dirección en Lima, Perú..." />
-    <div id="suggestions"></div>
+
+  <div class="toolbar">
+    <button class="btn-print" onclick="window.print()">Imprimir / Exportar PDF</button>
   </div>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.min.js"></script>
+  <div class="paper">
+    
+    <!-- ENCABEZADO CON LOGO IMAGEN NCR ATLEOS -->
+    <table class="header-table">
+      <tr>
+        <td style="width: 40%; vertical-align: top;">
+          <img src="logo ncr_2.png" alt="NCR ATLEOS Logo" class="logo-img">
+          <div class="company-title">NCR del Perú S.A.C.</div>
+        </td>
+        <td style="width: 30%; vertical-align: top;">
+          <div class="doc-title">
+            INFORME TÉCNICO<br>WCS
+          </div>
+        </td>
+        <td style="width: 30%; vertical-align: top;">
+          <div class="ppto-container">
+            <span class="label-text" style="margin-bottom: 2px;">N° PPTO</span>
+            <div class="boxes-group" data-group="ppto" data-size="5"></div>
+          </div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- NOMBRE DE LA CUENTA -->
+    <div style="margin-top: 10px;">
+      <span class="label-text">NOMBRE DE LA CUENTA</span>
+      <input type="text" class="full-width-input">
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- WO (9 CUADRADOS) Y FECHA REP -->
+    <div class="field-row">
+      <div class="field-inline">
+        <span class="label-text">WO</span>
+        <div class="boxes-group" data-group="wo" data-size="9"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">FECHA REP.</span>
+        <div class="boxes-group" data-group="fecha" data-size="6"></div>
+      </div>
+    </div>
+
+    <!-- NOMBRE CLIENTE -->
+    <div class="field-row">
+      <div class="field-inline" style="width: 100%;">
+        <span class="label-text" style="width: 140px;">NOMBRE CLIENTE</span>
+        <div class="boxes-group" data-group="cliente" data-size="31"></div>
+      </div>
+    </div>
+
+    <!-- DIRECCIÓN CLIENTE -->
+    <div class="field-row">
+      <div class="field-inline" style="width: 100%;">
+        <span class="label-text" style="width: 140px;">DIRECCIÓN CLIENTE</span>
+        <div class="boxes-group" data-group="direccion" data-size="27"></div>
+      </div>
+    </div>
+
+    <!-- DISTRITO Y PROVINCIA -->
+    <div class="field-row">
+      <div class="field-inline">
+        <span class="label-text">DISTRITO</span>
+        <div class="boxes-group" data-group="distrito" data-size="15"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">PROVINCIA</span>
+        <div class="boxes-group" data-group="provincia" data-size="9"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- CLASE, ID (7 CUADRADOS), SERIE -->
+    <div class="field-row">
+      <div class="field-inline">
+        <span class="label-text">CLASE</span>
+        <div class="boxes-group" data-group="clase" data-size="4"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">ID</span>
+        <div class="boxes-group" data-group="id" data-size="7"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">SERIE</span>
+        <div class="boxes-group" data-group="serie" data-size="10"></div>
+      </div>
+    </div>
+
+    <!-- DESPACHO, PARADA, COMPLETADA -->
+    <div class="field-row">
+      <div class="field-inline">
+        <span class="label-text label-col-1">DESPACHO</span>
+        <div class="boxes-group" data-group="despacho" data-size="4"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text label-col-2">PARADA</span>
+        <div class="boxes-group" data-group="parada" data-size="2"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text label-col-3">COMPLETADA</span>
+        <div class="boxes-group" data-group="completada" data-size="1"></div>
+      </div>
+    </div>
+
+    <!-- INICIO, REPARACIÓN, SUSPENDIDA -->
+    <div class="field-row">
+      <div class="field-inline">
+        <span class="label-text label-col-1">INICIO</span>
+        <div class="boxes-group" data-group="inicio" data-size="4"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text label-col-2">REPARACIÓN</span>
+        <div class="boxes-group" data-group="reparacion" data-size="2"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text label-col-3">SUSPENDIDA</span>
+        <div class="boxes-group" data-group="suspendida" data-size="1"></div>
+      </div>
+    </div>
+
+    <!-- FINAL, RETORNO, CAUSA, ENTORNO -->
+    <div class="field-row">
+      <div class="field-inline">
+        <span class="label-text label-col-1">FINAL</span>
+        <div class="boxes-group" data-group="final" data-size="4"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">RETORNO</span>
+        <div class="boxes-group" data-group="retorno" data-size="4"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">CAUSA</span>
+        <div class="boxes-group" data-group="causa" data-size="4"></div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">ENTORNO</span>
+        <div class="boxes-group" data-group="entorno" data-size="4"></div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- TRABAJOS EFECTUADOS -->
+    <div class="works-section">
+      <div style="display: flex; align-items: flex-end; margin-bottom: 2px;">
+        <span class="label-text" style="white-space: nowrap; margin-right: 5px;">TRABAJOS EFECTUADOS:</span>
+        <input type="text" class="line-input">
+      </div>
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+      <input type="text" class="line-input">
+    </div>
+
+    <div class="divider" style="margin-top: 15px;"></div>
+
+    <!-- TABLA DE REPUESTOS Y CASILLEROS -->
+    <div style="margin-top: 10px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+        <div style="width: 80px; text-align: center;"><span class="label-text">REQ. N°</span></div>
+        <div style="width: 40px; text-align: center;"><span class="label-text">UNI.</span></div>
+        <div style="width: 200px; text-align: center;"><span class="label-text">N° DE PARTE</span></div>
+        <div style="width: 380px; text-align: center;"><span class="label-text">DESCRIPCIÓN</span></div>
+      </div>
+
+      <!-- FILA 1 DE PARTE -->
+      <div class="field-row" style="margin-bottom: 4px;">
+        <div class="boxes-group" data-group="req_1" data-size="4"></div>
+        <div class="boxes-group" data-group="uni_1" data-size="2"></div>
+        <div class="boxes-group" data-group="parte_1" data-size="10"></div>
+        <div class="boxes-group" data-group="desc_1" data-size="20"></div>
+      </div>
+
+      <!-- FILA 2 DE PARTE -->
+      <div class="field-row">
+        <div class="boxes-group" data-group="req_2" data-size="4"></div>
+        <div class="boxes-group" data-group="uni_2" data-size="2"></div>
+        <div class="boxes-group" data-group="parte_2" data-size="10"></div>
+        <div class="boxes-group" data-group="desc_2" data-size="20"></div>
+      </div>
+    </div>
+
+    <!-- FIRMAS Y PIE DE PÁGINA -->
+    <div class="footer-section">
+      <div class="sig-block">
+        <div class="sig-line">NOMBRE, FIRMA DEL CLIENTE Y SELLO</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-line">FIRMA FE</div>
+      </div>
+      <div class="field-inline">
+        <span class="label-text">N° CE</span>
+        <div class="boxes-group" data-group="nce" data-size="2"></div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    const map = L.map("map").setView([-12.05, -77.05], 13);
-    L.tileLayer("https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png", {
-      attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    let waypoints = [];
-    let control = null;
-
-function buildYandexURL(coords, ptStart, ptEnd) {
-  const plCoords = coords.map(c => `${c[0].toFixed(5)},${c[1].toFixed(5)}`).join(",");
-  const pl = `pl=c:3C3C3CFF,w:5,${plCoords}`;
-  const pt = `pt=${ptStart[0].toFixed(4)},${ptStart[1].toFixed(4)},comma_solid_red~${ptEnd[0].toFixed(4)},${ptEnd[1].toFixed(4)},comma_solid_blue`;
-
-  const allCoords = [...coords, ptStart, ptEnd];
-  const lons = allCoords.map(c => c[0]);
-  const lats = allCoords.map(c => c[1]);
-
-  // let padding = 0.004; // ~20 píxeles de margen
-  let padyy = 0.05;
-
-  const rawMinLon = Math.min(...lons);
-  const rawMaxLon = Math.max(...lons);
-  const rawMinLat = Math.min(...lats);
-  const rawMaxLat = Math.max(...lats);
-
-  let padding = (Math.abs(rawMaxLat- rawMinLat)/256)*35 ; // ~20 píxeles de margen
-
-
-
-  let minLon, maxLon, minLat, maxLat;
-
-  if (Math.abs(rawMaxLat - rawMinLat) <= 0.01450) {
-    padding = 0.0003;
-    minLon = (rawMinLon ).toFixed(5);
-    maxLon = (rawMaxLon ).toFixed(5);
-    minLat = (rawMinLat - 6*padding).toFixed(6);
-    maxLat = (rawMaxLat + 2*padding).toFixed(6);
-   
-  } else {
-    minLon = (rawMinLon ).toFixed(6);
-    maxLon = (rawMaxLon ).toFixed(6);
-    minLat = (rawMinLat).toFixed(6);
-    maxLat = (rawMaxLat + padding).toFixed(6);
-   
-    console.log("minLat:", minLat);
-    console.log("maxLat:", maxLat);
-    console.log(rawMaxLat);
-  }
-
-  const bbox = `bbox=${minLon},${minLat}~${maxLon},${maxLat}`;
-
-  // Ajuste de tamaño dinámico basado en diferencia de latitudes
-  const latDiff = rawMaxLat - rawMinLat;
-  const size = latDiff > 0.045 ? "500,280" : "500,256";  // ← ajusta el umbral si necesitas más precisión
-
-  return `https://tc.mobile.yandex.net/get-map/1.x/?l=map&cr=0&lg=0&scale=1&lang=es&${pt}&${pl}&${bbox}&size=${size}`;
-}
-
-
-    function updateRoute() {
-      if (control) map.removeControl(control);
-      if (waypoints.length >= 2) {
-        control = L.Routing.control({
-          waypoints: waypoints,
-          routeWhileDragging: false,
-          router: L.Routing.osrmv1({
-            serviceUrl: "https://router.project-osrm.org/route/v1"
-          }),
-          show: false,
-          addWaypoints: false
-        })
-        .on('routesfound', function(e) {
-          const latlngs = e.routes[0].coordinates;
-          const bounds = L.latLngBounds(latlngs).pad(0.1);
-          map.fitBounds(bounds);
-
-          const simplifyCoords = (points, step = 5) =>
-            points.filter((_, index) => index % step === 0 || index === points.length - 1)
-                  .map(ll => [ll.lng, ll.lat]);
-
-          const coords = simplifyCoords(latlngs, 5);
-          const yandexURL = buildYandexURL(coords, coords[0], coords[coords.length - 1]);
-
-          document.getElementById("url").innerHTML = `<a href="${yandexURL}" target="_blank">${yandexURL}</a>`;
-        })
-        .addTo(map);
+    // Generar dinámicamente las casillas según data-size
+    document.querySelectorAll('.boxes-group').forEach(group => {
+      const size = parseInt(group.getAttribute('data-size'));
+      const groupName = group.getAttribute('data-group');
+      
+      for (let i = 0; i < size; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 1;
+        input.className = 'box-input';
+        input.setAttribute('data-group-name', groupName);
+        input.setAttribute('data-index', i);
+        group.appendChild(input);
       }
-    }
-
-    map.on("click", function (e) {
-      if (waypoints.length >= 2) {
-        waypoints = [];
-        map.eachLayer(layer => {
-          if (layer instanceof L.Marker) map.removeLayer(layer);
-        });
-        if (control) {
-          map.removeControl(control);
-          control = null;
-        }
-        document.getElementById("url").textContent = "Haz clic en dos puntos para generar la ruta...";
-      }
-
-      const marker = L.marker(e.latlng, { draggable: true }).addTo(map).bindPopup(
-        `Lat: ${e.latlng.lat.toFixed(4)}<br>Lng: ${e.latlng.lng.toFixed(4)}`
-      ).openPopup();
-
-      waypoints.push(marker.getLatLng());
-
-      if (waypoints.length > 0) {
-        const bounds = L.latLngBounds(waypoints);
-        map.fitBounds(bounds.pad(0.2));
-      }
-
-      updateRoute();
     });
 
-    // Buscador con Photon
-    const searchInput = document.getElementById('search-input');
-    const suggestionsDiv = document.getElementById('suggestions');
-
-    searchInput.addEventListener('input', function () {
-      const query = searchInput.value.trim();
-      if (query.length < 3) {
-        suggestionsDiv.innerHTML = "";
-        return;
+    // Avance automático y conversión a mayúsculas
+    document.addEventListener('input', (e) => {
+      if (e.target.classList.contains('box-input')) {
+        const groupName = e.target.getAttribute('data-group-name');
+        const currentIndex = parseInt(e.target.getAttribute('data-index'));
+        
+        // Forzar mayúsculas
+        e.target.value = e.target.value.toUpperCase();
+        
+        if (e.target.value.length >= 1) {
+          const nextInput = document.querySelector(`input[data-group-name="${groupName}"][data-index="${currentIndex + 1}"]`);
+          if (nextInput) {
+            nextInput.focus();
+          }
+        }
       }
+    });
 
-      fetch(`https://photon.komoot.io/api/?q=${query}&limit=5&lang=es&lat=-12.05&lon=-77.05`)
-        .then(response => response.json())
-        .then(data => {
-          suggestionsDiv.innerHTML = "";
-          data.features.forEach(place => {
-            const suggestion = document.createElement("div");
-            suggestion.className = "suggestion";
-            suggestion.textContent = `${place.properties.name}, ${place.properties.city || ""}, ${place.properties.country || ""}`;
-            suggestion.addEventListener("click", () => {
-              const coords = place.geometry.coordinates;
-              const latlng = L.latLng(coords[1], coords[0]);
-              map.setView(latlng, 17);
-              const marker = L.marker(latlng).addTo(map).bindPopup("Ubicación seleccionada").openPopup();
-              suggestionsDiv.innerHTML = "";
-              searchInput.value = "";
-            });
-            suggestionsDiv.appendChild(suggestion);
-          });
-        });
+    // Navegación con Teclado (Backspace, Flecha Izquierda, Flecha Derecha)
+    document.addEventListener('keydown', (e) => {
+      if (e.target.classList.contains('box-input')) {
+        const groupName = e.target.getAttribute('data-group-name');
+        const currentIndex = parseInt(e.target.getAttribute('data-index'));
+
+        if (e.key === 'Backspace') {
+          if (!e.target.value && currentIndex > 0) {
+            const prevInput = document.querySelector(`input[data-group-name="${groupName}"][data-index="${currentIndex - 1}"]`);
+            if (prevInput) {
+              prevInput.focus();
+            }
+          }
+        } else if (e.key === 'ArrowLeft' && currentIndex > 0) {
+          const prevInput = document.querySelector(`input[data-group-name="${groupName}"][data-index="${currentIndex - 1}"]`);
+          if (prevInput) {
+            prevInput.focus();
+          }
+        } else if (e.key === 'ArrowRight') {
+          const nextInput = document.querySelector(`input[data-group-name="${groupName}"][data-index="${currentIndex + 1}"]`);
+          if (nextInput) {
+            nextInput.focus();
+          }
+        }
+      }
+    });
+
+    // Soporte para Pegar (Paste) texto completo en los casilleros
+    document.addEventListener('paste', (e) => {
+      if (e.target.classList.contains('box-input')) {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text').toUpperCase().trim();
+        const groupName = e.target.getAttribute('data-group-name');
+        const startIndex = parseInt(e.target.getAttribute('data-index'));
+        
+        const inputs = document.querySelectorAll(`input[data-group-name="${groupName}"]`);
+        
+        for (let i = 0; i < pasteData.length; i++) {
+          const targetIndex = startIndex + i;
+          if (targetIndex < inputs.length) {
+            inputs[targetIndex].value = pasteData[i];
+            if (targetIndex + 1 < inputs.length) {
+              inputs[targetIndex + 1].focus();
+            } else {
+              inputs[targetIndex].focus();
+            }
+          }
+        }
+      }
     });
   </script>
 </body>
